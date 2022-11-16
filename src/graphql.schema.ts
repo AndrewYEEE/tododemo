@@ -14,7 +14,15 @@ export class CatInput {
     color: string;
 }
 
+export class Author {
+    id: number;
+    firstName?: Nullable<string>;
+    lastName?: Nullable<string>;
+}
+
 export abstract class IQuery {
+    abstract author(id: number): Nullable<Author> | Promise<Nullable<Author>>;
+
     abstract getCats(): Nullable<Nullable<Cat>[]> | Promise<Nullable<Nullable<Cat>[]>>;
 }
 

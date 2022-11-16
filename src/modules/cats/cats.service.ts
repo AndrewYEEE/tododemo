@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Logger,Injectable } from '@nestjs/common';
 import { Cat, CatInput } from 'src/graphql.schema'
 
 @Injectable()
 export class CatsService {
+    private readonly logger = new Logger(CatsService.name);
     private cats: Cat[] = [];
 
     create(cat: CatInput) {
@@ -15,6 +16,7 @@ export class CatsService {
     }
 
     findAll(): Cat[] {
+        this.logger.log(`awfj;wfhwofhfwofhwofh`)
         return this.cats;
     }
 }

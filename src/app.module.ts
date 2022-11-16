@@ -9,11 +9,13 @@ import { CopyTodoModule } from './features/copy-todo/copy-todo.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { CatsModule } from './modules/cats/cats.module';
+import { AuthorModule } from './modules/authors/author.module';
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; //用來代替graphql playground的工具
 
 @Module({
   imports: [
     CatsModule,
+    AuthorModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '../env/.env',
@@ -22,9 +24,9 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
     CopyTodoModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      playground: false,
+      playground: true,
       typePaths: ['./**/*.graphql'],
-      plugins: [ApolloServerPluginLandingPageLocalDefault()],
+      //plugins: [ApolloServerPluginLandingPageLocalDefault()],
       definitions: {
         path: join(process.cwd(), './src/graphql.schema.ts'),
         outputAs: 'class',
