@@ -8,16 +8,17 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export class AuthorInfo {
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    email: string;
+}
+
 export class CatInput {
     name: string;
     age: number;
     color: string;
-}
-
-export class Author {
-    id: number;
-    firstName?: Nullable<string>;
-    lastName?: Nullable<string>;
 }
 
 export abstract class IQuery {
@@ -27,7 +28,17 @@ export abstract class IQuery {
 }
 
 export abstract class IMutation {
+    abstract createAuthor(authorInfo: AuthorInfo): Nullable<boolean> | Promise<Nullable<boolean>>;
+
     abstract createCat(catInput?: Nullable<CatInput>): Nullable<Cat> | Promise<Nullable<Cat>>;
+}
+
+export class Author {
+    id: number;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    email: string;
 }
 
 export class Cat {

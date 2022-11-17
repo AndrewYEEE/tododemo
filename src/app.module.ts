@@ -18,7 +18,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
     AuthorModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '../env/.env',
+      envFilePath: 'env/.env',
     }),
     TodoModule, 
     CopyTodoModule,

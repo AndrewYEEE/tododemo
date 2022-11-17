@@ -19,3 +19,15 @@ export class CatResolver {
     }
 
 }
+/* 查詢範例
+    mutation {
+        createCat (catInput: {
+            name: "test123",
+            age: 12,
+            color:"red",
+        }){
+            id,
+            name 
+        }
+    }
+*/
