@@ -32,13 +32,13 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
         outputAs: 'class',
       },
     }),
-    // MongooseModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   inject: [ConfigService],
-    //   useFactory: async (config: ConfigService) => ({
-    //     uri: config.get<string>('mongo.uri')
-    //   })
-    // })
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('MONGODB_URI')
+      }),
+      inject: [ConfigService],
+    })
   ],
   controllers: [AppController],
   providers: [AppService],
