@@ -4,19 +4,19 @@ import { User } from './user.model';
 
 export type TodoDocument = Todo & Document;
 
-@Schema()
+@Schema({ timestamps: true })
 export class Todo {
 
-  @Prop({ required: true, maxlength: 20 })
+  @Prop({ required: true, maxlength: 100 })
   title: string;
 
-  @Prop({ maxlength: 200 })
+  @Prop({ maxlength: 500 })
   description: string;
 
-  @Prop({ required: true })
+  @Prop({ default:false })
   completed: boolean;
 
-  @Prop({ type: Types.ObjectId, ref: 'User' })
+  @Prop({ type: Types.ObjectId, ref: User.name, autopopulate: true })
   owner: User;
 
 }

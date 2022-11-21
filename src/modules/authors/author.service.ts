@@ -1,36 +1,70 @@
-import { Logger,Injectable } from "@nestjs/common";
-import { Author,AuthorInfo } from 'src/graphql.schema';
+import { Logger,Injectable,UseFilters } from "@nestjs/common";
+import { Author,AuthorInfo,CreateResult,AuthorUpdate } from 'src/graphql.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { User, UserInfo, UserDocument, UserInfoSchema} from '../../models/user.model'
+import { User, UserInfo, UserDocument} from 'src/models/user.model'
+import { MongoExceptionFilter } from 'src/modules/mongo-exception.filter';
 
 @Injectable()
 export class AuthorService {
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>;
     private readonly logger = new Logger(AuthorService.name);
-    private authors: Author[] = [
-        {id: 1,firstName: "Stephen", lastName: "John",fullName:"Stephen John", email:""},
-        {id: 2,firstName: "Andrew", lastName: "Jeckson",fullName:"Andrew Jeckson",email:""},
-        {id: 3,firstName: "Andy", lastName: "Tom",fullName:"Andy Tom",email:""},
-    ];
 
-    queryAuthors(authorid:number): Author {
+    async queryAuthors(authorid:String): Promise<Author> {
         this.logger.log(authorid)
-        return this.authors.find(({id})=> id==authorid)
+        const Result = await this.userModel.findById(authorid)
+        if (Result){
+            return {
+                id: Result._id,
+                firstName: Result.name.firstName,
+                lastName: Result.name.lastName,
+                fullName: Result.name.fullName,
+                email: Result.email,
+            }
+        }
+        return null
     }
 
-    async createAuthor(authorInfo:AuthorInfo):Promise<Boolean>{
-        var userinfo: UserInfo={
+    async updateAuthor(id:String, authorUpdate:AuthorUpdate): Promise<Author>{
+        this.logger.log(id,authorUpdate);
+        const Result = await this.userModel.findByIdAndUpdate(id,authorUpdate,{new: true}); //回傳更新後的結果
+        if (Result){
+            return {
+                id: Result._id,
+                firstName: Result.name.firstName,
+                lastName: Result.name.lastName,
+                fullName: Result.name.fullName,
+                email: Result.email,
+            }
+        }
+        return null
+    }
+
+    @UseFilters(MongoExceptionFilter)  //<-----沒有用
+    async createAuthor(authorInfo:AuthorInfo):Promise<CreateResult>{
+        const userinfo: UserInfo={
             firstName: authorInfo.firstName,
             lastName: authorInfo.lastName,
             fullName: authorInfo.fullName, 
         }
-
-        if (this.userModel.create({name:userinfo,email:authorInfo.email}) !=null){
-            return true 
+        const getResult = await this.userModel.create({name:userinfo,email:authorInfo.email})
+        if (getResult!==null) {
+            const ID = getResult._id;
+            this.logger.log(`A user has been created. id: ${ID}`)
+            return {
+                id:ID,
+                status:true
+            }
         }
-        return false 
+        // throw new ApolloError(
+        //     `Can not create user on MongoDB.`,
+        //     ErrorCode.MONGODB_ERROR,
+        //   );
+        return {
+            id:null,
+            status:false
+        }
     }
     
 }

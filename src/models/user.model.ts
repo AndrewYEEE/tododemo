@@ -23,7 +23,7 @@ export class User {
   @Prop({type : UserInfoSchema})
   name: UserInfo;
   
-  @Prop({ required: true })
+  @Prop({ index: true, unique: true ,required: true })
   email: string;
 
 }
