@@ -24,6 +24,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
     CopyTodoModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
+      installSubscriptionHandlers: true,
       playground: true,
       typePaths: ['./**/*.graphql'],
       //plugins: [ApolloServerPluginLandingPageLocalDefault()],
@@ -31,6 +32,20 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
         path: join(process.cwd(), './src/graphql.schema.ts'),
         outputAs: 'class',
       },
+      subscriptions: {                                        //用於客製化GraphQL在Subscription時的連線內容，比如做字串處裡與認證
+        'subscriptions-transport-ws': {                       //指定使用哪種WebSocket引擎 (官方表示請改用graphql-ws)
+          onConnect: (connectionParams: any) => {             //連線時內容會以connectionParams傳遞近來
+            console.log("connectionParams:");
+            console.log(connectionParams);
+            return connectionParams
+          },
+        },
+      },
+      // context: ({ connection }) => {
+      //   console.log("connection:");
+      //   console.log(connection);
+      //   return connection
+      // },
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],

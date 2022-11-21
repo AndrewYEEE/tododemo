@@ -31,7 +31,7 @@ export class AuthorResolver {
     async createAuthor(@Args('authorInfo') authorInfo:AuthorInfo):Promise<CreateResult> {
         return this.authorService.createAuthor(authorInfo).catch(err => {
             throw new ApolloError(
-                `Can not create user on MongoDB.`,
+                `Can not create user on MongoDB.`+err,
                 ErrorCode.MONGODB_ERROR,
               );
         });

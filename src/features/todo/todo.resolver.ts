@@ -1,14 +1,16 @@
 
-import { Resolver, Query, Args ,Mutation} from "@nestjs/graphql";
+import { Resolver, Query, Args ,Mutation, Subscription} from "@nestjs/graphql";
 import { TodoService  } from "./todo.service";
 import {PostInfo,CreatePostResult,MyPost} from "src/graphql.schema";
-import {ApolloError} from "apollo-server-express";
+import {ApolloError,ForbiddenError} from "apollo-server-express";
 import { ErrorCode } from 'src/modules/error.code';
+import { AuthorService } from 'src/modules/authors/author.service';
 
 @Resolver('Todo')
 export class TodoResolver {
     constructor(
-        private readonly todoService: TodoService
+        private readonly todoService: TodoService,
+        private readonly authorService:AuthorService
     ) {}
 
     @Query('queryPosts')
@@ -31,5 +33,18 @@ export class TodoResolver {
                 ErrorCode.MONGODB_ERROR,
               );
         });
+    }
+
+    @Subscription(() => MyPost)
+    async postBeenCreated(          //注意Subscription不特別寫return參數型別
+      @Args('userid') userid:String,
+    ) { 
+      const userCheck = await this.authorService.queryAuthors(userid);
+      if (userCheck===null){
+        throw new ForbiddenError(
+            `You have no permission to get user for ${userid} or user not exist.`,
+        );
+      }
+      return this.todoService.postBeenCreated(userid.toString());
     }
 }

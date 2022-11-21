@@ -6,6 +6,10 @@ type Mutation {
     createPost(id:String!, postinfo: PostInfo!): CreatePostResult
 }
 
+type Subscription {
+    postBeenCreated(userid:String!): MyPost
+}
+
 type MyPost{
     id:String!
     title:String!

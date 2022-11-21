@@ -72,6 +72,10 @@ export class Cat {
     color?: Nullable<string>;
 }
 
+export abstract class ISubscription {
+    abstract postBeenCreated(userid: string): Nullable<MyPost> | Promise<Nullable<MyPost>>;
+}
+
 export class MyPost {
     id: string;
     title: string;
