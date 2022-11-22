@@ -16,5 +16,6 @@ import {User, UserSchema} from '../../models/user.model';
          ]),
     ],
     providers: [AuthorService, AuthorResolver],
+    exports: [AuthorService],
 })
 export class AuthorModule {}

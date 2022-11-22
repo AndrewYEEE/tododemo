@@ -27,7 +27,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
    AuthorModule,
   ],
   controllers: [TodoController],
-  providers: [TodoService,TodoResolver,AuthorService],
+  providers: [TodoService,TodoResolver],
   exports: [TodoService]
 })
 export class TodoModule {}
