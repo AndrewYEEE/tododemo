@@ -15,18 +15,6 @@ type MyPost{
     title:String!
     description:String!
     completed:Boolean!
-    owner: User!
-}
-
-type User{
-    name: UserInfo!
-    email: String!
-}
-
-type UserInfo{
-  firstName: String!
-  lastName: String!
-  fullName: String!
 }
 
 input PostInfo{

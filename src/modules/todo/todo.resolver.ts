@@ -4,13 +4,13 @@ import { TodoService  } from "./todo.service";
 import {PostInfo,CreatePostResult,MyPost} from "src/graphql.schema";
 import {ApolloError,ForbiddenError} from "apollo-server-express";
 import { ErrorCode } from 'src/modules/error.code';
-import { AuthorService } from 'src/modules/authors/author.service';
+import { UserService } from 'src/modules/user/user.service';
 
 @Resolver('Todo')
 export class TodoResolver {
     constructor(
         private readonly todoService: TodoService,
-        private readonly authorService:AuthorService
+        private readonly userService:UserService
     ) {}
 
     @Query('queryPosts')
@@ -39,7 +39,7 @@ export class TodoResolver {
     async postBeenCreated(          //注意Subscription不特別寫return參數型別
       @Args('userid') userid:String,
     ) { 
-      const userCheck = await this.authorService.queryAuthors(userid);
+      const userCheck = await this.userService.findUserById(userid);
       if (userCheck===null){
         throw new ForbiddenError(
             `You have no permission to get user for ${userid} or user not exist.`,

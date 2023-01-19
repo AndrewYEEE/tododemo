@@ -4,18 +4,18 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TodoModule } from './features/todo/todo.module';
-import { CopyTodoModule } from './features/copy-todo/copy-todo.module';
+import { TodoModule } from 'src/modules/todo/todo.module';
+import { CopyTodoModule } from 'src/modules/copy-todo/copy-todo.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { CatsModule } from './modules/cats/cats.module';
-import { AuthorModule } from './modules/authors/author.module';
+import { CatsModule } from 'src/modules/cats/cats.module';
+import { UserModule } from 'src/modules/user/user.module';
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; //用來代替graphql playground的工具
 
 @Module({
   imports: [
     CatsModule,
-    AuthorModule,
+    UserModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: 'env/.env',
@@ -41,11 +41,6 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
           },
         },
       },
-      // context: ({ connection }) => {
-      //   console.log("connection:");
-      //   console.log(connection);
-      //   return connection
-      // },
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],

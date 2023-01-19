@@ -8,6 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule,{
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
+  app.setGlobalPrefix('api')  //所有controller URL皆加上api/前綴
   await app.listen(3000);
   Logger.log(`🚀 Server running on http://127.0.0.1:3000`, 'Bootstrap');
 

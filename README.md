@@ -5,7 +5,10 @@
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
+這是一個NestJS的後端應用，實作GraphQL+BearToken+MongoDB整合。
+
+
+
 
 ## License
-
-Nest is [MIT licensed](LICENSE).
+[MIT licensed](LICENSE).

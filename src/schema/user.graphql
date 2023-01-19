@@ -1,0 +1,29 @@
+type Query {
+  queryUser(id: String!): User
+}
+
+type Mutation {
+  createUser(userInfo: UserInfo!): Result
+  updateUser(id: String!, userUpdate: UserInfo): User
+}
+
+input UserInfo{
+  firstName: String!
+  lastName: String!
+  fullName: String!
+  email: String!
+}
+
+type User {
+  id: String!
+  firstName: String!
+  lastName: String!
+  fullName: String!
+  email: String!
+}
+
+type Result {
+  id: String!
+  status: Boolean!
+}
+

@@ -109,11 +109,11 @@ export class TodoService {
             description: result.description,
             completed: result.completed,
             owner: {
-              name: {
-                firstName: result.owner.name.firstName,
-                lastName: result.owner.name.lastName,
-                fullName: result.owner.name.fullName,
-              },
+              // name: {
+              //   firstName: result.owner.name.firstName,
+              //   lastName: result.owner.name.lastName,
+              //   fullName: result.owner.name.fullName,
+              // },
               email: result.owner.email,
             }
           }});
