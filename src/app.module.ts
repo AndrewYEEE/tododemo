@@ -7,9 +7,10 @@ import { AppService } from './app.service';
 import { TodoModule } from 'src/modules/todo/todo.module';
 import { CopyTodoModule } from 'src/modules/copy-todo/copy-todo.module';
 import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo'; //nestjs中graphQL要靠Apollo Server Driver驅動
 import { CatsModule } from 'src/modules/cats/cats.module';
 import { UserModule } from 'src/modules/user/user.module';
+import { AuthModule } from 'src/modules/auth/auth.module';
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; //用來代替graphql playground的工具
 
 @Module({
@@ -48,7 +49,8 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
         uri: configService.get<string>('MONGODB_URI')
       }),
       inject: [ConfigService],
-    })
+    }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

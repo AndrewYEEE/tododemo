@@ -2,11 +2,14 @@ import { Logger,Injectable,UseFilters,OnModuleInit  } from "@nestjs/common";
 import { 
     User as ApolloUser,
     UserInfo as ApolloUserInfo, 
+    BasicInfo as ApolloBasicInfo,
     Result as ApolloResult,
 } from 'src/graphql.schema';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
+import { ApolloError } from 'apollo-server-express';
+import { ErrorCode } from 'src/modules/error.code';
 import { User, UserInfo, UserDocument} from 'src/models/user.model';
 import { Role } from "src/constants";
 import { CommonUtility } from "src/modules/utils/common.utility";
@@ -58,59 +61,98 @@ export class UserService implements OnModuleInit{
         return user;
       }
 
-    async findUserById(authorid:String): Promise<ApolloUser> {
-        this.logger.log(authorid)
-        const Result = await this.userModel.findById(authorid)
-        // if (Result){
-        //     return {
-        //         id: Result._id,
-        //         firstName: Result.name.firstName,
-        //         lastName: Result.name.lastName,
-        //         fullName: Result.name.fullName,
-        //         email: Result.email,
-        //     }
-        // }
-        return null
-    }
-
-    async updateUser(id:String, userUpdate:ApolloUserInfo): Promise<ApolloUser>{
-        this.logger.log(id,userUpdate);
-        const Result = await this.userModel.findByIdAndUpdate(id,userUpdate,{new: true}); //回傳更新後的結果
-        // if (Result){
-        //     return {
-        //         id: Result._id,
-        //         firstName: Result.name.firstName,
-        //         lastName: Result.name.lastName,
-        //         fullName: Result.name.fullName,
-        //         email: Result.email,
-        //     }
-        // }
-        return null
-    }
-
-    async createUser(userInfo:ApolloUserInfo):Promise<ApolloResult>{
-        // const userinfo: UserInfo={
-        //     firstName: authorInfo.firstName,
-        //     lastName: authorInfo.lastName,
-        //     fullName: authorInfo.fullName, 
-        // }
-        // const getResult = await this.userModel.create({name:userinfo,email:authorInfo.email})
-        // if (getResult!==null) {
-        //     const ID = getResult._id;
-        //     this.logger.log(`A user has been created. id: ${ID}`)
-        //     return {
-        //         id:ID,
-        //         status:true
-        //     }
-        // }
-        // throw new ApolloError(
-        //     `Can not create user on MongoDB.`,
-        //     ErrorCode.MONGODB_ERROR,
-        //   );
-        return {
-            id:null,
-            status:false
+    async findUserById(authorid:String): Promise<User> {
+        // this.logger.log(authorid);
+        try{
+            const Result = await this.userModel.findById(authorid);
+            return Result;
+        }catch{
+            throw new ApolloError(
+                `Can not find user.`,
+                ErrorCode.USER_NOT_FOUND,
+            );
         }
+    }
+
+    async updateUser(user: User, userUpdate:ApolloUserInfo): Promise<ApolloUser>{
+        let nowUser = await this.findUser(user.email);  //取出User物件
+        if (!nowUser){
+            throw new ApolloError(
+                `Can not find user on MongoDB.`,
+                ErrorCode.USER_NOT_FOUND,
+            );
+        }
+        this.logger.log(user.email,userUpdate);
+        const Result = await this.userModel.findByIdAndUpdate(
+            user._id,
+            {
+                email: userUpdate.email ? userUpdate.email : nowUser.email,
+                detail: {
+                    firstName: userUpdate.firstname ? userUpdate.firstname: nowUser.detail.firstName,
+                    lastName: userUpdate.lastname ? userUpdate.lastname: nowUser.detail.lastName,
+                    Age: userUpdate.age ? userUpdate.age: nowUser.detail.Age,
+                }
+            },
+            {
+                new: true,
+                useFindAndModify: false,
+            },
+        ); 
+        
+        //回傳更新後的結果
+        if (Result){
+            return Result.toApolloUser();
+        }
+        return null
+    }
+
+    async createUser(basicInfo:ApolloBasicInfo):Promise<ApolloResult>{
+        if (!basicInfo) {
+            return this.createResult(null,false);
+        }
+        const findone = await this.findUser(basicInfo.email)
+        if (findone) {
+            this.logger.log(basicInfo.email)
+            throw new ApolloError(
+                `Can not create exist user.`,
+                ErrorCode.USER_ALREADY_EXISTED,
+            );
+        }
+
+        const user = new User();  //建立User物件
+        user.username = basicInfo.username
+        user.role = Role.MEMBER;
+        user.email = basicInfo.email;
+
+        const userinfo = new UserInfo();
+        userinfo.firstName=basicInfo.firstname?basicInfo.firstname:"";
+        userinfo.lastName=basicInfo.lastname?basicInfo.lastname:"";
+        userinfo.Age=basicInfo.age?basicInfo.age:0;
+        
+        user.detail= userinfo;
+        user.password = CommonUtility.encryptBySalt(basicInfo.password)
+        const getResult = await this.userModel.create(user)
+        if (getResult!==null) {
+            this.logger.log(`A user has been created. id: ${getResult._id}`)
+            return this.createResult(getResult._id,true);
+        }
+        throw new ApolloError(
+            `Can not create user on MongoDB.`,
+            ErrorCode.MONGODB_ERROR,
+        );
+        return this.createResult(null,false); //不會到這
+    }
+
+    async hasUser():Promise<Boolean> {
+        const count = await this.userModel.estimatedDocumentCount().exec();
+        return count > 0;
+    }
+
+    createResult(id:string,status:boolean):ApolloResult{
+        const result = new ApolloResult();
+        result.id=id;
+        result.status=status;
+        return result;
     }
     
 }

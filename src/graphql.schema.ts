@@ -8,6 +8,23 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export enum Roles {
+    ADMIN = "ADMIN",
+    NMEMBER = "NMEMBER"
+}
+
+export class SignupInput {
+    email: string;
+    username: string;
+    password: string;
+}
+
+export class SigninInput {
+    id: string;
+    username: string;
+    password: string;
+}
+
 export class CatInput {
     name: string;
     age: number;
@@ -20,11 +37,45 @@ export class PostInfo {
     completed?: Nullable<boolean>;
 }
 
-export class UserInfo {
-    firstName: string;
-    lastName: string;
-    fullName: string;
+export class BasicInfo {
+    firstname?: Nullable<string>;
+    lastname?: Nullable<string>;
+    username: string;
     email: string;
+    password: string;
+    age?: Nullable<number>;
+}
+
+export class UserInfo {
+    firstname: string;
+    lastname: string;
+    username: string;
+    email: string;
+    age: number;
+}
+
+export abstract class IMutation {
+    abstract signup(signupInput: SignupInput): Nullable<SignupPayload> | Promise<Nullable<SignupPayload>>;
+
+    abstract signin(signinInput: SigninInput): Nullable<SigninPayload> | Promise<Nullable<SigninPayload>>;
+
+    abstract createCat(catInput?: Nullable<CatInput>): Nullable<Cat> | Promise<Nullable<Cat>>;
+
+    abstract createPost(id: string, postinfo: PostInfo): Nullable<CreatePostResult> | Promise<Nullable<CreatePostResult>>;
+
+    abstract createUser(basicinfo: BasicInfo): Nullable<Result> | Promise<Nullable<Result>>;
+
+    abstract updateUser(id: string, userinfo?: Nullable<UserInfo>): Nullable<User> | Promise<Nullable<User>>;
+}
+
+export class SignupPayload {
+    id?: Nullable<string>;
+    result: boolean;
+}
+
+export class SigninPayload {
+    token?: Nullable<string>;
+    result: boolean;
 }
 
 export abstract class IQuery {
@@ -33,16 +84,6 @@ export abstract class IQuery {
     abstract queryPosts(id: string): Nullable<Nullable<MyPost>[]> | Promise<Nullable<Nullable<MyPost>[]>>;
 
     abstract queryUser(id: string): Nullable<User> | Promise<Nullable<User>>;
-}
-
-export abstract class IMutation {
-    abstract createCat(catInput?: Nullable<CatInput>): Nullable<Cat> | Promise<Nullable<Cat>>;
-
-    abstract createPost(id: string, postinfo: PostInfo): Nullable<CreatePostResult> | Promise<Nullable<CreatePostResult>>;
-
-    abstract createUser(userInfo: UserInfo): Nullable<Result> | Promise<Nullable<Result>>;
-
-    abstract updateUser(id: string, userUpdate?: Nullable<UserInfo>): Nullable<User> | Promise<Nullable<User>>;
 }
 
 export class Cat {
@@ -70,10 +111,12 @@ export class CreatePostResult {
 
 export class User {
     id: string;
-    firstName: string;
-    lastName: string;
-    fullName: string;
+    firstname?: Nullable<string>;
+    lastname?: Nullable<string>;
+    username: string;
     email: string;
+    role: Roles;
+    age?: Nullable<number>;
 }
 
 export class Result {

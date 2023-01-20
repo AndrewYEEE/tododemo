@@ -3,23 +3,35 @@ type Query {
 }
 
 type Mutation {
-  createUser(userInfo: UserInfo!): Result
-  updateUser(id: String!, userUpdate: UserInfo): User
+  createUser(basicinfo: BasicInfo!): Result
+  updateUser(id: String!, userinfo: UserInfo): User
+}
+
+input BasicInfo{
+  firstname: String
+  lastname: String
+  username: String!
+  email: String!
+  password: String!
+  age: Int
 }
 
 input UserInfo{
-  firstName: String!
-  lastName: String!
-  fullName: String!
+  firstname: String!
+  lastname: String!
+  username: String!
   email: String!
+  age: Int!
 }
 
 type User {
   id: String!
-  firstName: String!
-  lastName: String!
-  fullName: String!
+  firstname: String
+  lastname: String
+  username: String!
   email: String!
+  role: Roles!
+  age: Int
 }
 
 type Result {
@@ -27,3 +39,7 @@ type Result {
   status: Boolean!
 }
 
+enum Roles {
+  ADMIN
+  NMEMBER
+}
