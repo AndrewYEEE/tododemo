@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module,forwardRef } from '@nestjs/common';
 import { TodoController } from './todo.controller';
 import { TodoService } from './todo.service';
 import { TodoResolver } from './todo.resolver';
@@ -16,13 +16,8 @@ import { User,UserSchema } from 'src/models/user.model';
         schema: TodoSchema,
         collection: 'todos',
       },
-      {
-        name: User.name,
-        schema: UserSchema,
-        collection: 'users',
-      },
-   ]),
-   UserModule,
+    ]),
+    forwardRef(() => UserModule),
   ],
   controllers: [TodoController],
   providers: [TodoService,TodoResolver],

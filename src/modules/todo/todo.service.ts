@@ -1,14 +1,15 @@
-import { Injectable,Logger } from '@nestjs/common';
+import { Injectable,Logger,forwardRef,Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Todo,TodoDocument } from 'src/models/todo.model';
 import { Model } from 'mongoose';
-import { PostInfo,CreatePostResult, MyPost } from 'src/graphql.schema';
+import { PostInfo,PostResult, TodoPost } from 'src/graphql.schema';
 import { User, UserDocument } from 'src/models/user.model';
 import { ApolloError } from "apollo-server-express";
 import { ErrorCode } from 'src/modules/error.code';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import Redis from 'ioredis'; 
 import { ConfigService } from '@nestjs/config';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class TodoService {
@@ -16,10 +17,10 @@ export class TodoService {
     private readonly logger = new Logger(TodoService.name);
     constructor(      //用來讓Nest可以實例化的Model、Service寫在這，單純的物件寫在外面
       private readonly configService: ConfigService,
+      @Inject(forwardRef(() => UserService))
+      private readonly userService: UserService,
       @InjectModel(Todo.name)
       private readonly todoModel: Model<TodoDocument>,
-      @InjectModel(User.name)
-      private readonly userModel: Model<UserDocument>,
     ){
       const dateReviver = (_: any, value: string) => {
         const isISO8601Z =
@@ -53,40 +54,51 @@ export class TodoService {
       });
     }
 
-    private todos: { id: number, title: string, description: string }[] = [
-        {
-          id: 1,
-          title: 'Title 1',
-          description: ''
-        }
-    ];
-    
-    getTodos(): { id: number, title: string, description: string }[] {
-        return this.todos;
-    }
-
-    createTodo(item: { id: number, title: string, description: string }) {
-        this.todos.push(item);
-    }
-
-    async queryPosts(id:String): Promise<MyPost[]| null>{
+    async queryMyPosts(user: User): Promise<TodoPost[]| null>{
       var ObjectId = require('mongoose').Types.ObjectId; 
-      const result = await this.todoModel.find({owner:new ObjectId(id)}).populate("owner").exec();
-      const animals = [];
+      const result = await this.todoModel.find({owner:new ObjectId(user._id)}).populate("owner").exec();
+      const todos = [];
 
       if (result){
         result.flatMap((element) => {
           // this.logger.log(`${element}`);
-          animals.push(element);
+          todos.push(element);
         })
       }
       
-      return animals //直接這樣就可以回傳，也太神奇
+      return todos //直接這樣就可以回傳，也太神奇
     }
 
-    async createPost(id:String, postinfo:PostInfo) : Promise<CreatePostResult| null>{
-      const userQuery = await this.userModel.findById(id);
-      if (userQuery===null){
+    async queryMyPostTotal(user: User): Promise<number>{
+      const check = await this.userService.findUserById(user.id);
+      if(!check){
+        throw new ApolloError(
+          `User id not found on MongoDB.`,
+          ErrorCode.AUTH_USER_NOT_FOUND,
+        );
+      }
+
+      const total = await this.todoModel.count(
+        { owner: user._id }
+      )
+      if(!total){
+        throw new ApolloError(
+          `Todo Query failed on MongoDB.`,
+          ErrorCode.TODO_QUERY_FAILED,
+        );
+      }
+      
+      return total;
+
+    }
+
+    async createMyPost(user: User, postinfo:PostInfo) : Promise<PostResult| null>{
+      this.logger.log(user.email);
+      this.logger.log(user.id);
+      this.logger.log(user._id);
+
+      const userQuery = await this.userService.findUserById(user.id);
+      if (!userQuery){
         throw new ApolloError(
           `User id not found on MongoDB.`,
           ErrorCode.AUTH_USER_NOT_FOUND,
@@ -102,20 +114,12 @@ export class TodoService {
       if (result){
         //this.logger.log(`${result}`)
         //send to redis
-        this.pubSub.publish(id.toString(), { 
+        this.pubSub.publish(userQuery._id.toString(), { 
           postBeenCreated: {
             id: result._id,
             title: result.title,
             description: result.description,
             completed: result.completed,
-            owner: {
-              // name: {
-              //   firstName: result.owner.name.firstName,
-              //   lastName: result.owner.name.lastName,
-              //   fullName: result.owner.name.fullName,
-              // },
-              email: result.owner.email,
-            }
           }});
         return {
           postid: result._id,
@@ -123,36 +127,23 @@ export class TodoService {
         }
       }
 
-      /*
-        {
-          completed: true,
-          _id: new ObjectId("637b8217a90f1d5fd4034f3e"),
-          title: 'hihi',
-          description: 'hwllo world',
-          owner: {
-            _id: new ObjectId("6376340a1e88e9f829ba825d"),
-            name: {
-              firstName: 'Andrew',
-              lastName: 'YEE',
-              fullName: 'Andrew YEE',
-              _id: new ObjectId("6376340a1e88e9f829ba825e"),
-              createdAt: 2022-11-17T13:15:54.710Z,
-              updatedAt: 2022-11-17T13:15:54.710Z
-            },
-            email: 'test@test.com',
-            createdAt: 2022-11-17T13:15:54.712Z,
-            updatedAt: 2022-11-17T13:15:54.712Z,
-            __v: 0
-          },
-          createdAt: 2022-11-21T13:50:15.316Z,
-          updatedAt: 2022-11-21T13:50:15.316Z,
-          __v: 0
-        }
-       */
+    
       return {
         postid: null,
         status: false, 
       }
+    }
+
+    async deletePosts(user:User): Promise<Boolean>{
+      const { deletedCount } = await this.todoModel.deleteMany(
+        {
+          owner: user
+        }
+      )
+      if (!deletedCount){
+        return false
+      }
+      return true 
     }
 
     async postBeenCreated(userid:string): Promise<AsyncIterator<unknown>> {

@@ -47,11 +47,11 @@ export class BasicInfo {
 }
 
 export class UserInfo {
-    firstname: string;
-    lastname: string;
-    username: string;
+    firstname?: Nullable<string>;
+    lastname?: Nullable<string>;
+    username?: Nullable<string>;
     email: string;
-    age: number;
+    age?: Nullable<number>;
 }
 
 export abstract class IMutation {
@@ -61,11 +61,23 @@ export abstract class IMutation {
 
     abstract createCat(catInput?: Nullable<CatInput>): Nullable<Cat> | Promise<Nullable<Cat>>;
 
-    abstract createPost(id: string, postinfo: PostInfo): Nullable<CreatePostResult> | Promise<Nullable<CreatePostResult>>;
+    abstract createMyPost(postinfo: PostInfo): Nullable<PostResult> | Promise<Nullable<PostResult>>;
+
+    abstract editMyPost(postid: string, postinfo: PostInfo): Nullable<PostResult> | Promise<Nullable<PostResult>>;
+
+    abstract editPostByUserID(userid: string, postid: string, postinfo: PostInfo): Nullable<PostResult> | Promise<Nullable<PostResult>>;
+
+    abstract deleteMyPost(postid: string): Nullable<PostResult> | Promise<Nullable<PostResult>>;
+
+    abstract deletePostByID(userid: string, postid: string): Nullable<PostResult> | Promise<Nullable<PostResult>>;
 
     abstract createUser(basicinfo: BasicInfo): Nullable<Result> | Promise<Nullable<Result>>;
 
-    abstract updateUser(id: string, userinfo?: Nullable<UserInfo>): Nullable<User> | Promise<Nullable<User>>;
+    abstract updateSelf(userinfo: UserInfo): Nullable<User> | Promise<Nullable<User>>;
+
+    abstract updateUser(id: string, userinfo: UserInfo): Nullable<User> | Promise<Nullable<User>>;
+
+    abstract deleteUser(email: string): Nullable<Result> | Promise<Nullable<Result>>;
 }
 
 export class SignupPayload {
@@ -81,7 +93,13 @@ export class SigninPayload {
 export abstract class IQuery {
     abstract getCats(): Nullable<Nullable<Cat>[]> | Promise<Nullable<Nullable<Cat>[]>>;
 
-    abstract queryPosts(id: string): Nullable<Nullable<MyPost>[]> | Promise<Nullable<Nullable<MyPost>[]>>;
+    abstract queryMyPosts(): Nullable<Nullable<TodoPost>[]> | Promise<Nullable<Nullable<TodoPost>[]>>;
+
+    abstract queryMyPostTotal(): Nullable<number> | Promise<Nullable<number>>;
+
+    abstract queryPostByUserID(userid: string, skip: number, index: number): Nullable<Nullable<TodoPost>[]> | Promise<Nullable<Nullable<TodoPost>[]>>;
+
+    abstract queryPostTotal(): Nullable<number> | Promise<Nullable<number>>;
 
     abstract queryUser(id: string): Nullable<User> | Promise<Nullable<User>>;
 }
@@ -94,17 +112,17 @@ export class Cat {
 }
 
 export abstract class ISubscription {
-    abstract postBeenCreated(userid: string): Nullable<MyPost> | Promise<Nullable<MyPost>>;
+    abstract postBeenCreated(userid: string): Nullable<TodoPost> | Promise<Nullable<TodoPost>>;
 }
 
-export class MyPost {
+export class TodoPost {
     id: string;
     title: string;
     description: string;
     completed: boolean;
 }
 
-export class CreatePostResult {
+export class PostResult {
     postid: string;
     status: boolean;
 }

@@ -1,5 +1,5 @@
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException,Logger } from '@nestjs/common';
 import { Strategy } from 'passport-http-bearer';
 import { AuthService } from './auth.service';
 import { Request } from 'express';
@@ -11,20 +11,27 @@ export class HttpStrategy extends PassportStrategy(Strategy) {  //檢查beartoke
       passReqToCallback: true,
     });
   }
-
+  private readonly logger = new Logger(HttpStrategy.name);
   async validate(req: Request, accessToken: string): Promise<any> {   //Req應該是指使用者傳入的req內容 (比如query、mutation、Subscription) (accessToken=bear token)
     // we could do a database lookup in our validate()
     // method to extract more information about the user
+    this.logger.log(accessToken)
     const token = await this.authService.getAccessToken(accessToken); //檢查MongoDB有沒有此Token (從oauth_access_tokens資料表)
     const current = new Date();
-
+    if (token){
+      this.logger.log(token.accessToken)
+      this.logger.log(token.accessTokenExpiresAt)
+      this.logger.log(token.user._id)
+      this.logger.log(token.user.id)
+      this.logger.log(token.user.email)
+      this.logger.log(token.user.username)
+    }
     if (  //如果沒有Token，或是Token過期了
       token === null ||
       current.getTime() > token.accessTokenExpiresAt.getTime()     
     ) {
       throw new UnauthorizedException();  //拋出意外錯誤 (PassportStrategy預設都這個錯誤，會回傳401 Unauthoized)
     }
-
     return { userModel: token.user }; //原來HttpAuthGuard和@CurrentUser的user是從這邊來的
   }
 }

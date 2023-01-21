@@ -1,29 +1,36 @@
 type Query {
-    queryPosts(id:String!):[MyPost]
+    queryMyPosts: [TodoPost]
+    queryMyPostTotal: Int
+    queryPostByUserID(userid: String!, skip: Int!, index: Int!): [TodoPost]
+    queryPostTotal: Int
 }
 
 type Mutation {
-    createPost(id:String!, postinfo: PostInfo!): CreatePostResult
+    createMyPost(postinfo: PostInfo!): PostResult
+    editMyPost(postid: String!, postinfo: PostInfo!): PostResult
+    editPostByUserID(userid: String!, postid: String!, postinfo: PostInfo!): PostResult
+    deleteMyPost(postid: String!): PostResult
+    deletePostByID(userid: String!, postid: String!): PostResult 
 }
 
 type Subscription {
-    postBeenCreated(userid:String!): MyPost
+    postBeenCreated(userid:String!): TodoPost
 }
 
-type MyPost{
+type TodoPost {
     id:String!
     title:String!
     description:String!
     completed:Boolean!
 }
 
-input PostInfo{
+input PostInfo {
     title:String!
     description:String!
     completed:Boolean
 }
 
-type CreatePostResult {
+type PostResult {
   postid: String!
   status: Boolean!
 }

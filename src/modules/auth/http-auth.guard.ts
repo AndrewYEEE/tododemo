@@ -51,11 +51,15 @@ import {
     }
   
     static executionContextToRequest(context: ExecutionContext): any {  //自訂方法，做到同時兼顧Http Req和Graphql Req處理
+      console.log("executionContextToRequest")
       if (context.getType() === 'http') {                      //檢查centext是否是http模式
         return context.switchToHttp().getRequest<Request>();   //如果是一般的http請求，則值接回傳該請求的Request內容 (Query Variable部份)
       } else if (context.getType<GqlContextType>() === 'graphql') {  //檢查centext是否是graphql模式
         const ctx = GqlExecutionContext.create(context);       //將NestJS預設的ExecutionContext轉成GqlExecutionContext以支援graphql專用的功能函式
+        console.log(ctx.getContext())
         const { req, connection } = ctx.getContext();          //這裡呼叫的其實已經是被grapql複寫過的Context，validation回傳的東西會在req裡面
+        console.log(connection)  //用Subscription情況下會變undefined
+        console.log(req) //用Subscription情況下會變undefined //所以app.module.ts內才改寫header
         return connection && connection.context && connection.context.headers
           ? connection.context
           : req;

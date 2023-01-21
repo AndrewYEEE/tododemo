@@ -7,6 +7,9 @@
 
 這是一個NestJS的後端應用，實作GraphQL+BearToken+MongoDB整合。
 
+步驟:
+先signup，建立user基本資料並取得id
+再signin，透過is取得AccessToken
 
 
 

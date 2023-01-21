@@ -1,4 +1,4 @@
-import { Logger,Injectable,UseFilters,OnModuleInit  } from "@nestjs/common";
+import { Logger,Injectable,forwardRef,OnModuleInit,Inject} from "@nestjs/common";
 import { 
     User as ApolloUser,
     UserInfo as ApolloUserInfo, 
@@ -14,11 +14,14 @@ import { User, UserInfo, UserDocument} from 'src/models/user.model';
 import { Role } from "src/constants";
 import { CommonUtility } from "src/modules/utils/common.utility";
 import { MongoExceptionFilter } from 'src/modules/mongo-exception.filter';
+import { TodoService } from "../todo/todo.service";
 
 @Injectable()
 export class UserService implements OnModuleInit{
     constructor(
         private readonly configService: ConfigService,
+        @Inject(forwardRef(() => TodoService))
+        private readonly todoService:TodoService,
         @InjectModel(User.name)
         private readonly userModel: Model<UserDocument>,
     ){}
@@ -74,17 +77,17 @@ export class UserService implements OnModuleInit{
         }
     }
 
-    async updateUser(user: User, userUpdate:ApolloUserInfo): Promise<ApolloUser>{
-        let nowUser = await this.findUser(user.email);  //取出User物件
+    async updateUser(id: string, userUpdate:ApolloUserInfo): Promise<ApolloUser>{
+        let nowUser = await this.findUserById(id);  //取出User物件
         if (!nowUser){
             throw new ApolloError(
                 `Can not find user on MongoDB.`,
                 ErrorCode.USER_NOT_FOUND,
             );
         }
-        this.logger.log(user.email,userUpdate);
+        this.logger.log(nowUser.email,userUpdate);
         const Result = await this.userModel.findByIdAndUpdate(
-            user._id,
+            nowUser._id,
             {
                 email: userUpdate.email ? userUpdate.email : nowUser.email,
                 detail: {
@@ -108,7 +111,7 @@ export class UserService implements OnModuleInit{
 
     async createUser(basicInfo:ApolloBasicInfo):Promise<ApolloResult>{
         if (!basicInfo) {
-            return this.createResult(null,false);
+            return this.userResult(null,false);
         }
         const findone = await this.findUser(basicInfo.email)
         if (findone) {
@@ -134,13 +137,41 @@ export class UserService implements OnModuleInit{
         const getResult = await this.userModel.create(user)
         if (getResult!==null) {
             this.logger.log(`A user has been created. id: ${getResult._id}`)
-            return this.createResult(getResult._id,true);
+            return this.userResult(getResult._id,true);
         }
         throw new ApolloError(
             `Can not create user on MongoDB.`,
             ErrorCode.MONGODB_ERROR,
         );
-        return this.createResult(null,false); //不會到這
+        return this.userResult(null,false); //不會到這
+    }
+
+    async deleteUser(email: string):Promise<ApolloResult> {
+        const user = await this.findUser(email);
+        if (!user){
+            throw new ApolloError(
+                `Can not find user on MongoDB.`,
+                ErrorCode.USER_NOT_FOUND,
+            );
+        }
+        //找到user後先刪除所有user關聯之文章
+        const result = await this.todoService.deletePosts(user);
+        if (result){
+            throw new ApolloError(
+                `Can not user's Todo on MongoDB.`,
+                ErrorCode.TODO_DELETE_FAILED,
+            );
+        }
+
+        //刪除user本身
+        const document = await this.userModel.findByIdAndRemove(user._id).exec();
+        if (!document) {
+            throw new ApolloError(
+                `Can not delete user on MongoDB.`,
+                ErrorCode.USER_DELETE_FAILED,
+            );
+        }
+        return this.userResult(user.id,true);
     }
 
     async hasUser():Promise<Boolean> {
@@ -148,7 +179,7 @@ export class UserService implements OnModuleInit{
         return count > 0;
     }
 
-    createResult(id:string,status:boolean):ApolloResult{
+    userResult(id:string,status:boolean):ApolloResult{
         const result = new ApolloResult();
         result.id=id;
         result.status=status;

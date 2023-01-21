@@ -4,7 +4,9 @@ type Query {
 
 type Mutation {
   createUser(basicinfo: BasicInfo!): Result
-  updateUser(id: String!, userinfo: UserInfo): User
+  updateSelf(userinfo: UserInfo!): User
+  updateUser(id: String!, userinfo: UserInfo!): User
+  deleteUser(email: String!): Result
 }
 
 input BasicInfo{
@@ -17,11 +19,11 @@ input BasicInfo{
 }
 
 input UserInfo{
-  firstname: String!
-  lastname: String!
-  username: String!
+  firstname: String
+  lastname: String
+  username: String
   email: String!
-  age: Int!
+  age: Int
 }
 
 type User {

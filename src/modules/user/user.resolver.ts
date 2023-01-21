@@ -8,7 +8,8 @@ import {
 } from 'src/graphql.schema';
 import { ApolloError } from 'apollo-server-express';
 import { ErrorCode } from 'src/modules/error.code';
-import { User } from './user.decorator';
+import { CurrentUser } from 'src/modules/auth/auth.decorator';
+import { User } from 'src/models/user.model';
 
 @Resolver('User')
 export class UserResolver {
@@ -28,11 +29,14 @@ export class UserResolver {
     }
 
     @Mutation('updateUser')
-    async updateUser(
-        @Args('id') id:string,
-        @Args('userUpdate') userUpdate:ApolloUserInfo): Promise<ApolloUser>{
-        //return this.userService.updateUser(id, userUpdate);
-        return 
+    async updateUser(@Args('id') id: string ,@Args('userUpdate') userUpdate:ApolloUserInfo): Promise<ApolloUser>{
+        return this.userService.updateUser(id, userUpdate);
+        //return 
+    }
+
+    @Mutation('updateSelf')
+    async updateSelf(@CurrentUser() user: User, @Args('userUpdate') userUpdate:ApolloUserInfo): Promise<ApolloUser>{
+        return this.userService.updateUser(user.id, userUpdate);
     }
 
     @Mutation('createUser')
@@ -44,4 +48,16 @@ export class UserResolver {
               );
         });
     }
+
+    @Mutation('deleteUser')
+    async deleteUser(@Args('userInfo') email: string):Promise<ApolloResult> {
+        return this.userService.deleteUser(email).catch(err => {
+            throw new ApolloError(
+                `Can not create user on MongoDB.`+err,
+                ErrorCode.MONGODB_ERROR,
+              );
+        });
+    }
+
+
 }

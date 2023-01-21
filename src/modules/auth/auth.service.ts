@@ -71,12 +71,11 @@ export class AuthService {
 
         //建立Token
         const token = new OAuthAccessToken();
-        let now = new Date();
-        const newDate = this.addHours(now, 5);
+        const newDate = this.addHours(new Date(), 1);
         token.accessToken = randomBytes(64).toString('base64');
         token.accessTokenExpiresAt = newDate;
-        token.createdAt = now;
-        token.updatedAt = now;
+        token.createdAt = new Date();
+        token.updatedAt = new Date();
         token.user = user;
         const result = await this.tokenModel.create(token);
         if (!result){

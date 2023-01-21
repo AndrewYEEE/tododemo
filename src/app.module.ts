@@ -11,6 +11,8 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo'; //nestjs中gr
 import { CatsModule } from 'src/modules/cats/cats.module';
 import { UserModule } from 'src/modules/user/user.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
+import { Connection } from 'mongoose';
+import StringUtils from 'src/modules/utils/StringUtils';
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; //用來代替graphql playground的工具
 
 @Module({
@@ -38,17 +40,27 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
           onConnect: (connectionParams: any) => {             //連線時內容會以connectionParams傳遞近來
             console.log("connectionParams:");
             console.log(connectionParams);
-            return connectionParams
+            const result = {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+              req: { headers: StringUtils.keysToLowerCase(connectionParams) },   //不改寫的話會在http-auth.guard.ts中executionContextToRequest那邊出錯
+            };
+            console.log(result);
+            return result;
           },
         },
       },
     }),
     MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI')
+      imports: [ConfigModule],                                              //使用useFactory時，如果引入參數要用到其他Module要加
+      useFactory: async (configService: ConfigService) => ({                //引入configService以讀取環境參數
+        uri: configService.get<string>('MONGODB_URI'),                      //指定連線URL //,useFindAndModify: false, (指要求Mongo Driver棄用舊版useFindAndModify功能)(我看很多地方都有加) (如果在這裡加每個地方都能套用)(為何不加???)
+        connectionFactory: (connection: Connection) => {                    //依據NestJS官方說法，利用connectionFactory攔截connection
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-var-requires
+          connection.plugin(require('mongoose-autopopulate'));              //在建立mongoDB connection之前，套用Plugin，讓每個自建的Schema自動啟用populate關聯性功能
+          return connection;
+        },
       }),
-      inject: [ConfigService],
+      inject: [ConfigService],  
     }),
     AuthModule,
   ],
