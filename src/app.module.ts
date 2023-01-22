@@ -5,7 +5,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TodoModule } from 'src/modules/todo/todo.module';
-import { CopyTodoModule } from 'src/modules/copy-todo/copy-todo.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo'; //nestjs中graphQL要靠Apollo Server Driver驅動
 import { CatsModule } from 'src/modules/cats/cats.module';
@@ -13,6 +12,7 @@ import { UserModule } from 'src/modules/user/user.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { Connection } from 'mongoose';
 import StringUtils from 'src/modules/utils/StringUtils';
+import { DateScalar } from 'src/modules/scalar/date';  //自訂義GraphQL ScalarType : Date
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; //用來代替graphql playground的工具
 
 @Module({
@@ -23,8 +23,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
       isGlobal: true,
       envFilePath: 'env/.env',
     }),
-    TodoModule, 
-    CopyTodoModule,
+    TodoModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       installSubscriptionHandlers: true,
@@ -34,7 +33,12 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
       definitions: {
         path: join(process.cwd(), './src/graphql.schema.ts'),
         outputAs: 'class',
+        defaultScalarType: 'unknown',                         //依據官方說明，在自訂義scaler在Typescript中被視為any，安全起見強制為它設定型態
+        customScalarTypeMapping: {                            //依據官方說明，在自訂義scaler在Typescript中被視為any，安全起見強制為它設定型態
+          DateTime: 'Date',                                   //設定DateTime型態對應DateScalar Providor裡複寫的Date型態
+        },
       },
+      cors: true,                                             //main.ts中的CORS設定只對Restful有效，GraphQL本身要靠此設定支援跨網域存取
       subscriptions: {                                        //用於客製化GraphQL在Subscription時的連線內容，比如做字串處裡與認證
         'subscriptions-transport-ws': {                       //指定使用哪種WebSocket引擎 (官方表示請改用graphql-ws)
           onConnect: (connectionParams: any) => {             //連線時內容會以connectionParams傳遞近來
@@ -42,7 +46,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
             console.log(connectionParams);
             const result = {
               // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-              req: { headers: StringUtils.keysToLowerCase(connectionParams) },   //不改寫的話會在http-auth.guard.ts中executionContextToRequest那邊出錯
+              req: { headers: StringUtils.keysToLowerCase(connectionParams) },   //不改寫的話會使用Subscription時在http-auth.guard.ts中executionContextToRequest那邊出錯
             };
             console.log(result);
             return result;
@@ -65,6 +69,6 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,DateScalar],  //導入自訂義GraphQL ScalarType : Date 
 })
 export class AppModule {}

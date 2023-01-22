@@ -55,6 +55,14 @@ export class TodoService {
     }
 
     async queryMyPosts(user: User): Promise<TodoPost[]| null>{
+      const check = await this.userService.findUserById(user.id);
+      if(!check){
+        throw new ApolloError(
+          `User id not found on MongoDB.`,
+          ErrorCode.AUTH_USER_NOT_FOUND,
+        );
+      }
+
       var ObjectId = require('mongoose').Types.ObjectId; 
       const result = await this.todoModel.find({owner:new ObjectId(user._id)}).populate("owner").exec();
       const todos = [];
@@ -64,6 +72,11 @@ export class TodoService {
           // this.logger.log(`${element}`);
           todos.push(element);
         })
+      }else{
+        throw new ApolloError(
+          `Query todo failed on MongoDB.`,
+          ErrorCode.TODO_QUERY_FAILED,
+        );
       }
       
       return todos //直接這樣就可以回傳，也太神奇
@@ -90,6 +103,57 @@ export class TodoService {
       
       return total;
 
+    }
+
+    async queryPostByUserID(userid: string, skip: number, index: number):Promise<TodoPost[]|null>{
+      const exist = await this.userService.findUserById(userid);
+      if(!exist){
+        throw new ApolloError(
+          `User id not found on MongoDB.`,
+          ErrorCode.AUTH_USER_NOT_FOUND,
+        );
+      }
+      var ObjectId = require('mongoose').Types.ObjectId; 
+      const result = await this.todoModel.find({owner:new ObjectId(userid)})
+      .populate("owner")
+      .skip(skip?skip:0)
+      .limit(index?index:1)
+      .sort( {
+        updatedAt: 'desc'
+      } )
+      .exec();
+      const todos = [];
+
+      if (result){
+        result.flatMap((element) => {
+          let ele = new TodoPost();
+          ele.id = element._id;
+          ele.completed = element.completed;
+          ele.description = element.description;
+          ele.title = element.title;
+          ele.updatedAt = element.updatedAt.toISOString(); //時間從UNIX轉換成ISO標準
+          //ele.updatedAt = element.updatedAt; 
+          todos.push(ele);
+        })
+      }else{
+        throw new ApolloError(
+          `Query todo failed on MongoDB.`,
+          ErrorCode.TODO_QUERY_FAILED,
+        );
+      }
+
+      return todos
+    }
+    
+    async queryPostTotal():Promise<number>{
+      const total = await this.todoModel.count()
+      if(!total){
+        throw new ApolloError(
+          `Todo Query failed on MongoDB.`,
+          ErrorCode.TODO_QUERY_FAILED,
+        );
+      }
+      return total;
     }
 
     async createMyPost(user: User, postinfo:PostInfo) : Promise<PostResult| null>{
@@ -134,6 +198,44 @@ export class TodoService {
       }
     }
 
+    async editMyPost(user:User, postid: string,postinfo: PostInfo) : Promise<PostResult| null>{
+      const userQuery = await this.userService.findUserById(user.id);
+      if (!userQuery){
+        throw new ApolloError(
+          `User id not found on MongoDB.`,
+          ErrorCode.AUTH_USER_NOT_FOUND,
+        );
+      }
+
+      const todoQuery = await this.todoModel.findOne({id: postid}).exec();
+      if (!todoQuery){
+        throw new ApolloError(
+          `Can not found todo by id: ${postid} on MongoDB.`,
+          ErrorCode.TODO_NOT_FOUND,
+        );
+      }
+
+      const todoUpdate = await this.todoModel.findByIdAndUpdate(
+        postid,
+        {
+            title: postinfo.title? postinfo.title:todoQuery.title,
+            description: postinfo.description? postinfo.description: todoQuery.description,
+            complete: postinfo.completed? postinfo.completed: todoQuery.completed,
+        },
+        {
+            new: true,
+            useFindAndModify: false,
+        },
+      )
+      
+      //回傳更新後的結果
+      if (todoUpdate){
+        return this.todoResult(todoUpdate.id,true);
+      }
+
+      return this.todoResult(null,false);
+    }
+
     async deletePosts(user:User): Promise<Boolean>{
       const { deletedCount } = await this.todoModel.deleteMany(
         {
@@ -149,6 +251,13 @@ export class TodoService {
     async postBeenCreated(userid:string): Promise<AsyncIterator<unknown>> {
       return this.pubSub.asyncIterator(userid);
     }
+
+    todoResult(id:string,status:boolean):PostResult{
+      const result = new PostResult();
+      result.postid=id;
+      result.status=status;
+      return result;
+  }
 
 }
 

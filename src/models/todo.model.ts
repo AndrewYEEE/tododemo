@@ -34,6 +34,12 @@ export class Todo {
    })
   owner: User;
 
+  @Prop()
+  createdAt: Date;
+
+  @Prop()
+  updatedAt: Date;
+
 }
 
 export const TodoSchema = SchemaFactory.createForClass(Todo);

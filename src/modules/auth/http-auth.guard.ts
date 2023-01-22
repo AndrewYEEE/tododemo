@@ -56,10 +56,12 @@ import {
         return context.switchToHttp().getRequest<Request>();   //如果是一般的http請求，則值接回傳該請求的Request內容 (Query Variable部份)
       } else if (context.getType<GqlContextType>() === 'graphql') {  //檢查centext是否是graphql模式
         const ctx = GqlExecutionContext.create(context);       //將NestJS預設的ExecutionContext轉成GqlExecutionContext以支援graphql專用的功能函式
-        console.log(ctx.getContext())
         const { req, connection } = ctx.getContext();          //這裡呼叫的其實已經是被grapql複寫過的Context，validation回傳的東西會在req裡面
-        console.log(connection)  //用Subscription情況下會變undefined
-        console.log(req) //用Subscription情況下會變undefined //所以app.module.ts內才改寫header
+        if (false){
+          console.log(ctx.getContext())
+          console.log(connection)  //用Subscription情況下會變undefined //但好像mutation和query也是undefined
+          console.log(req) //用Subscription情況下會變undefined，所以app.module.ts內才改寫header //query與mutation都有東西
+        }
         return connection && connection.context && connection.context.headers
           ? connection.context
           : req;

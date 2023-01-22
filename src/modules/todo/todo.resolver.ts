@@ -36,12 +36,12 @@ export class TodoResolver {
 
     @Query('queryPostByUserID')
     async queryPostByUserID(@Args('userid') userid: string,@Args('skip') skip: number,@Args('index') index: number):Promise<TodoPost[]>{
-      return
+      return this.todoService.queryPostByUserID(userid,skip,index);
     }
 
     @Query('queryPostTotal')
     async queryPostTotal():Promise<number>{
-      return
+      return this.todoService.queryPostTotal();
     }
     
     @Mutation('createMyPost')

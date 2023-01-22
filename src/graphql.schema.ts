@@ -120,6 +120,7 @@ export class TodoPost {
     title: string;
     description: string;
     completed: boolean;
+    updatedAt: string;
 }
 
 export class PostResult {

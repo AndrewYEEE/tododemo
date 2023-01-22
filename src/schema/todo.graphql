@@ -1,3 +1,5 @@
+scalar Date 
+
 type Query {
     queryMyPosts: [TodoPost]
     queryMyPostTotal: Int
@@ -18,10 +20,11 @@ type Subscription {
 }
 
 type TodoPost {
-    id:String!
-    title:String!
-    description:String!
-    completed:Boolean!
+    id: String!
+    title: String!
+    description: String!
+    completed: Boolean!
+    updatedAt: String!
 }
 
 input PostInfo {
