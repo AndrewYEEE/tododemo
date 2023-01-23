@@ -4,6 +4,7 @@ import {
     UserInfo as ApolloUserInfo, 
     BasicInfo as ApolloBasicInfo,
     Result as ApolloResult,
+    Roles,
 } from 'src/graphql.schema';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
@@ -11,15 +12,19 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ApolloError } from 'apollo-server-express';
 import { ErrorCode } from 'src/modules/error.code';
 import { User, UserInfo, UserDocument} from 'src/models/user.model';
-import { Role } from "src/constants";
 import { CommonUtility } from "src/modules/utils/common.utility";
 import { MongoExceptionFilter } from 'src/modules/mongo-exception.filter';
 import { TodoService } from "../todo/todo.service";
+import { PermissionService } from "../permission/permission.service";
+import { AuthService } from "../auth/auth.service";
 
 @Injectable()
 export class UserService implements OnModuleInit{
     constructor(
         private readonly configService: ConfigService,
+        private readonly permissionService:PermissionService,
+        @Inject(forwardRef(()=>AuthService))
+        private readonly authService:AuthService,
         @Inject(forwardRef(() => TodoService))
         private readonly todoService:TodoService,
         @InjectModel(User.name)
@@ -34,6 +39,9 @@ export class UserService implements OnModuleInit{
     }
 
     async initialize(): Promise<User>{
+        // init permission role
+        await this.permissionService.Roleinit(); //等待初始化
+
         // create the root user
         const rootUser = await this.findUser(
             this.configService.get<string>('ROOT_USER_EMAIL'),
@@ -42,9 +50,17 @@ export class UserService implements OnModuleInit{
         if (rootUser) {  //如果已經有RootUser物件
             return rootUser;
         } else { //如果沒有則建立新的
+            //查詢Role
+            const role = await this.permissionService.queryRoleTemplate(Roles.ADMIN);
+            if(!role){
+                throw new ApolloError(
+                    `There is a role template '${Roles.ADMIN}' not in the DB`,
+                    ErrorCode.ROLE_TEMPLATE_NOT_FOUND,
+                );
+            }
             const user = new User();  //建立User物件
             user.username = this.configService.get<string>('ROOT_USER_NAME');
-            user.role = Role.ADMIN;
+            user.role = role;
             user.email = this.configService.get<string>('ROOT_USER_EMAIL');
             user.password = CommonUtility.encryptBySalt(this.configService.get<string>('ROOT_USER_PASSWORD'))
             this.logger.log(
@@ -122,9 +138,16 @@ export class UserService implements OnModuleInit{
             );
         }
 
+        const role = await this.permissionService.queryRoleTemplate(Roles.MEMBER);
+        if(!role){
+            throw new ApolloError(
+                `There is a role template '${Roles.MEMBER}' not in the DB`,
+                ErrorCode.ROLE_TEMPLATE_NOT_FOUND,
+            );
+        }
         const user = new User();  //建立User物件
         user.username = basicInfo.username
-        user.role = Role.MEMBER;
+        user.role = role;
         user.email = basicInfo.email;
 
         const userinfo = new UserInfo();
@@ -156,10 +179,19 @@ export class UserService implements OnModuleInit{
         }
         //找到user後先刪除所有user關聯之文章
         const result = await this.todoService.deletePosts(user);
-        if (result){
+        if (!result){
             throw new ApolloError(
-                `Can not user's Todo on MongoDB.`,
+                `Can not delete user's Todo on MongoDB.`,
                 ErrorCode.TODO_DELETE_FAILED,
+            );
+        }
+
+        //找到user後先刪除所有token
+        const result2 = await this.authService.deleteTokenByUser(user);
+        if (!result2){
+            throw new ApolloError(
+                `Can not delete user's Token on MongoDB.`,
+                ErrorCode.TOKEN_DELETE_FAILED,
             );
         }
 

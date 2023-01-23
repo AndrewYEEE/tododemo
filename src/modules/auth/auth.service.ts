@@ -1,4 +1,4 @@
-import { Injectable,Logger } from '@nestjs/common';
+import { Injectable,Logger,forwardRef,Inject } from '@nestjs/common';
 import {
     OAuthAccessToken,
     OAuthAccessTokenDocument,
@@ -20,12 +20,14 @@ import { CommonUtility } from "src/modules/utils/common.utility";
 import { randomBytes } from 'crypto';
 import { ApolloError } from 'apollo-server-express';
 import { ErrorCode } from 'src/modules/error.code';
+import { User } from 'src/models/user.model';
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectModel(OAuthAccessToken.name)
         private readonly tokenModel: Model<OAuthAccessTokenDocument>,
+        @Inject(forwardRef(() => UserService))
         private readonly userService: UserService,
     ) {}
     
@@ -33,6 +35,19 @@ export class AuthService {
 
     async getAccessToken(accessToken: string): Promise<OAuthAccessToken> { //從oauth_access_tokens資料表檢查是否有Token
         return this.tokenModel.findOne({ accessToken });
+    }
+
+    async deleteTokenByUser(user: User):Promise<Boolean>{
+        const { deletedCount } = await this.tokenModel.deleteMany(
+            {
+                user: user._id,
+            }
+        )
+        if (deletedCount == null){
+            return false
+        }
+        return true 
+        
     }
 
     async signup(signupInput:SignupInput):Promise<SignupPayload>{

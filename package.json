@@ -22,6 +22,7 @@
     "schema": "ts-node tools/generate-typings"
   },
   "dependencies": {
+    "@casl/ability": "^6.3.3",
     "@nestjs/apollo": "^10.1.6",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.2.0",

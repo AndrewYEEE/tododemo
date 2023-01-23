@@ -1,0 +1,39 @@
+input PermissionInput {
+  """
+  The action of the permission.
+  """
+  action: Action!
+  """
+  The subject of the permission.
+  """
+  subject: Subject!
+}
+
+enum Action {
+  VIEW
+  ADD
+  REMOVE
+  MODIFY
+}
+
+enum Subject {
+  MY_USER
+  ALL_USER
+  MY_TODO
+  ALL_TODO
+}
+
+type RoleTemplate {
+  id: ID!
+  name: String
+  permission: Permission
+}
+
+type Permission {
+  rules: [Rule]
+}
+
+type Rule {
+  action: Action!
+  subject: Subject!
+}

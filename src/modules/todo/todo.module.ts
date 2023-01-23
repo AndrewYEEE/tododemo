@@ -3,10 +3,9 @@ import { TodoController } from './todo.controller';
 import { TodoService } from './todo.service';
 import { TodoResolver } from './todo.resolver';
 import { UserModule } from 'src/modules/user/user.module'
-import { UserService } from 'src/modules/user/user.service'
 import { MongooseModule } from '@nestjs/mongoose';
 import { Todo,TodoSchema } from 'src/models/todo.model';
-import { User,UserSchema } from 'src/models/user.model';
+import { PermissionModule } from 'src/modules/permission/permission.module'
 
 @Module({
   imports:[
@@ -18,6 +17,7 @@ import { User,UserSchema } from 'src/models/user.model';
       },
     ]),
     forwardRef(() => UserModule),
+    PermissionModule,
   ],
   controllers: [TodoController],
   providers: [TodoService,TodoResolver],

@@ -64,13 +64,24 @@ export class TodoService {
       }
 
       var ObjectId = require('mongoose').Types.ObjectId; 
-      const result = await this.todoModel.find({owner:new ObjectId(user._id)}).populate("owner").exec();
+      const result = await this.todoModel.find({owner:new ObjectId(user._id)})
+      .populate("owner")
+      .sort({
+        updatedAt: 'desc',
+      })
+      .exec();
       const todos = [];
 
       if (result){
         result.flatMap((element) => {
-          // this.logger.log(`${element}`);
-          todos.push(element);
+          let ele = new TodoPost();
+          ele.id = element._id;
+          ele.completed = element.completed;
+          ele.description = element.description;
+          ele.title = element.title;
+          ele.updatedAt = element.updatedAt.toISOString(); //時間從UNIX轉換成ISO標準
+          //ele.updatedAt = element.updatedAt; 
+          todos.push(ele);
         })
       }else{
         throw new ApolloError(
@@ -216,11 +227,12 @@ export class TodoService {
       }
 
       const todoUpdate = await this.todoModel.findByIdAndUpdate(
-        postid,
+        todoQuery._id,
         {
             title: postinfo.title? postinfo.title:todoQuery.title,
             description: postinfo.description? postinfo.description: todoQuery.description,
-            complete: postinfo.completed? postinfo.completed: todoQuery.completed,
+            completed: postinfo.completed? postinfo.completed: todoQuery.completed,
+            updatedAt: new Date(),
         },
         {
             new: true,
@@ -229,20 +241,126 @@ export class TodoService {
       )
       
       //回傳更新後的結果
-      if (todoUpdate){
+      if (todoUpdate){ //OK
         return this.todoResult(todoUpdate.id,true);
+      }else{
+        return this.todoResult(null,false);
+      }
+    }
+
+    async editPostByUserID( userid: string, postid: string, postinfo: PostInfo): Promise<PostResult| null>{
+      const exist = await this.userService.findUserById(userid);
+      if(!exist){
+        throw new ApolloError(
+          `User id not found on MongoDB.`,
+          ErrorCode.AUTH_USER_NOT_FOUND,
+        );
+      }
+      var ObjectId = require('mongoose').Types.ObjectId; 
+      const todoQuery = await this.todoModel.findOne({
+        id: postid,
+        owner: new ObjectId(exist._id),
+      }).exec();
+      if (!todoQuery){
+        throw new ApolloError(
+          `Can not found todo by id: ${postid} on MongoDB.`,
+          ErrorCode.TODO_NOT_FOUND,
+        );
       }
 
-      return this.todoResult(null,false);
+      const todoUpdate = await this.todoModel.findByIdAndUpdate(
+        ObjectId._id,
+        {
+            title: postinfo.title? postinfo.title:todoQuery.title,
+            description: postinfo.description? postinfo.description: todoQuery.description,
+            completed: postinfo.completed? postinfo.completed: todoQuery.completed,
+            updatedAt: new Date(),
+        },
+        {
+            new: true,
+            useFindAndModify: false,
+        },
+      )
+      
+      //回傳更新後的結果
+      if (todoUpdate){ //OK
+        return this.todoResult(todoUpdate.id,true);
+      }else{
+        return this.todoResult(null,false);
+      }
+    }
+
+    async deleteMyPost(user:User,postid: string): Promise<PostResult|null>{
+      const exist = await this.userService.findUserById(user.id);
+      if(!exist){
+        throw new ApolloError(
+          `User id not found on MongoDB.`,
+          ErrorCode.AUTH_USER_NOT_FOUND,
+        );
+      }
+      var ObjectId = require('mongoose').Types.ObjectId; 
+      const todoQuery = await this.todoModel.findOne({
+        id: postid,
+        owner: new ObjectId(exist._id),
+      }).exec();
+      if (!todoQuery){
+        throw new ApolloError(
+          `Can not found todo by id: ${postid} on MongoDB.`,
+          ErrorCode.TODO_NOT_FOUND,
+        );
+      }
+      const { deletedCount } = await this.todoModel.deleteOne(
+        {
+          id: postid,
+          owner: new ObjectId(exist._id),
+        }
+      )
+      if (deletedCount){
+        return this.todoResult(postid,true);
+      }else{
+        return this.todoResult(null,false);
+      } 
+    }
+
+    async deletePostByID(userid: string, postid: string): Promise<PostResult|null>{
+      const exist = await this.userService.findUserById(userid);
+      if(!exist){
+        throw new ApolloError(
+          `User id not found on MongoDB.`,
+          ErrorCode.AUTH_USER_NOT_FOUND,
+        );
+      }
+      var ObjectId = require('mongoose').Types.ObjectId; 
+      const todoQuery = await this.todoModel.findOne({
+        id: postid,
+        owner: new ObjectId(exist._id),
+      }).exec();
+      if (!todoQuery){
+        throw new ApolloError(
+          `Can not found todo by id: ${postid} on MongoDB.`,
+          ErrorCode.TODO_NOT_FOUND,
+        );
+      }
+      const { deletedCount } = await this.todoModel.deleteOne(
+        {
+          id: postid,
+          owner: new ObjectId(exist._id),
+        }
+      )
+      if (deletedCount){
+        return this.todoResult(postid,true);
+      }else{
+        return this.todoResult(null,false);
+      } 
     }
 
     async deletePosts(user:User): Promise<Boolean>{
       const { deletedCount } = await this.todoModel.deleteMany(
         {
-          owner: user
+          owner: user._id,
         }
       )
-      if (!deletedCount){
+      if (deletedCount == null){
         return false
       }
       return true 

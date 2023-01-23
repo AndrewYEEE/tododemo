@@ -8,9 +8,24 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export enum Action {
+    VIEW = "VIEW",
+    ADD = "ADD",
+    REMOVE = "REMOVE",
+    MODIFY = "MODIFY"
+}
+
+export enum Subject {
+    MY_USER = "MY_USER",
+    ALL_USER = "ALL_USER",
+    MY_TODO = "MY_TODO",
+    ALL_TODO = "ALL_TODO"
+}
+
 export enum Roles {
     ADMIN = "ADMIN",
-    NMEMBER = "NMEMBER"
+    MEMBER = "MEMBER",
+    UNKNOWN = "UNKNOWN"
 }
 
 export class SignupInput {
@@ -25,10 +40,9 @@ export class SigninInput {
     password: string;
 }
 
-export class CatInput {
-    name: string;
-    age: number;
-    color: string;
+export class PermissionInput {
+    action: Action;
+    subject: Subject;
 }
 
 export class PostInfo {
@@ -59,8 +73,6 @@ export abstract class IMutation {
 
     abstract signin(signinInput: SigninInput): Nullable<SigninPayload> | Promise<Nullable<SigninPayload>>;
 
-    abstract createCat(catInput?: Nullable<CatInput>): Nullable<Cat> | Promise<Nullable<Cat>>;
-
     abstract createMyPost(postinfo: PostInfo): Nullable<PostResult> | Promise<Nullable<PostResult>>;
 
     abstract editMyPost(postid: string, postinfo: PostInfo): Nullable<PostResult> | Promise<Nullable<PostResult>>;
@@ -90,9 +102,22 @@ export class SigninPayload {
     result: boolean;
 }
 
-export abstract class IQuery {
-    abstract getCats(): Nullable<Nullable<Cat>[]> | Promise<Nullable<Nullable<Cat>[]>>;
+export class RoleTemplate {
+    id: string;
+    name?: Nullable<string>;
+    permission?: Nullable<Permission>;
+}
 
+export class Permission {
+    rules?: Nullable<Nullable<Rule>[]>;
+}
+
+export class Rule {
+    action: Action;
+    subject: Subject;
+}
+
+export abstract class IQuery {
     abstract queryMyPosts(): Nullable<Nullable<TodoPost>[]> | Promise<Nullable<Nullable<TodoPost>[]>>;
 
     abstract queryMyPostTotal(): Nullable<number> | Promise<Nullable<number>>;
@@ -102,13 +127,6 @@ export abstract class IQuery {
     abstract queryPostTotal(): Nullable<number> | Promise<Nullable<number>>;
 
     abstract queryUser(id: string): Nullable<User> | Promise<Nullable<User>>;
-}
-
-export class Cat {
-    id?: Nullable<number>;
-    name?: Nullable<string>;
-    age?: Nullable<number>;
-    color?: Nullable<string>;
 }
 
 export abstract class ISubscription {
@@ -134,7 +152,7 @@ export class User {
     lastname?: Nullable<string>;
     username: string;
     email: string;
-    role: Roles;
+    role: string;
     age?: Nullable<number>;
 }
 

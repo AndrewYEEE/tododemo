@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module,forwardRef } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthResolver } from './auth.resolver';
 import {
@@ -20,7 +20,7 @@ import { UserModule } from '../user/user.module';
         collection: 'oauth_access_tokens', //指定使用oauth_access_tokens資料表
       },
     ]),
-    UserModule,
+    forwardRef(() => UserModule),
   ],
   providers: [
     AuthService, 

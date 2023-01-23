@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory,raw } from '@nestjs/mongoose';
 import { Document,Types } from 'mongoose';
-import { Constants, Role  } from 'src/constants';
+import { Constants  } from 'src/constants';
 import {
   User as ApolloUser,
   Roles as ApolloRoles,
 } from 'src/graphql.schema';
-
+import { RoleTemplate } from './role.template'; 
 
 @Schema({ timestamps: true })
 export class UserInfo {
@@ -56,12 +56,12 @@ export class User {
   })
   email: string;  //等同於Account
 
-  @Prop({
-    required: true,
-    enum: Role,
-    default: Role.MEMBER,
-  })
-  role: Role;
+  @Prop({ 
+    type: Types.ObjectId, 
+    ref: RoleTemplate.name, 
+    autopopulate: true,
+   })
+  role: RoleTemplate;
 
   toApolloUser: () => ApolloUser;
 }
@@ -76,12 +76,7 @@ UserSchema.methods.toApolloUser = function (this: User): ApolloUser {  //依據�
   apolloUser.username = this.username;
   apolloUser.firstname = this.detail.firstName;
   apolloUser.lastname = this.detail.lastName;
-  switch (this.role) {
-    case Role.ADMIN:
-      apolloUser.role=ApolloRoles.ADMIN;
-    case Role.MEMBER:
-      apolloUser.role=ApolloRoles.NMEMBER;
-  }
+  apolloUser.role=this.role.toApolloRoleTemplate().name;
   apolloUser.age=this.detail.Age;
   return apolloUser;
 };

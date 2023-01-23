@@ -4,6 +4,8 @@ import { UserResolver } from './user.resolver';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from '../../models/user.model';
 import { TodoModule } from 'src/modules/todo/todo.module'
+import { PermissionModule } from 'src/modules/permission/permission.module'
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
@@ -15,6 +17,8 @@ import { TodoModule } from 'src/modules/todo/todo.module'
         },
       ]),
       forwardRef(() => TodoModule),
+      PermissionModule,
+      forwardRef(() => AuthModule),
     ],
     providers: [UserService, UserResolver],
     exports: [UserService],

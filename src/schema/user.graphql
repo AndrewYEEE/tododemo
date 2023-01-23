@@ -1,11 +1,26 @@
 type Query {
+  """
+  Query User by userid.
+  """
   queryUser(id: String!): User
 }
 
 type Mutation {
+  """
+  Create a User.
+  """
   createUser(basicinfo: BasicInfo!): Result
+  """
+  Update the detail info for user.
+  """
   updateSelf(userinfo: UserInfo!): User
+  """
+  Update a user detail by userid. 
+  """
   updateUser(id: String!, userinfo: UserInfo!): User
+  """
+  Delete a user with email. 
+  """
   deleteUser(email: String!): Result
 }
 
@@ -32,7 +47,7 @@ type User {
   lastname: String
   username: String!
   email: String!
-  role: Roles!
+  role: String!
   age: Int
 }
 
@@ -43,5 +58,6 @@ type Result {
 
 enum Roles {
   ADMIN
-  NMEMBER
+  MEMBER
+  UNKNOWN
 }

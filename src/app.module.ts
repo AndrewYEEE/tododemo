@@ -7,9 +7,9 @@ import { AppService } from './app.service';
 import { TodoModule } from 'src/modules/todo/todo.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo'; //nestjs中graphQL要靠Apollo Server Driver驅動
-import { CatsModule } from 'src/modules/cats/cats.module';
 import { UserModule } from 'src/modules/user/user.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
+import { PermissionModule } from 'src/modules/permission/permission.module';
 import { Connection } from 'mongoose';
 import StringUtils from 'src/modules/utils/StringUtils';
 import { DateScalar } from 'src/modules/scalar/date';  //自訂義GraphQL ScalarType : Date
@@ -17,7 +17,6 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
 
 @Module({
   imports: [
-    CatsModule,
     UserModule,
     ConfigModule.forRoot({
       isGlobal: true,
@@ -67,6 +66,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core'; 
       inject: [ConfigService],  
     }),
     AuthModule,
+    PermissionModule,
   ],
   controllers: [AppController],
   providers: [AppService,DateScalar],  //導入自訂義GraphQL ScalarType : Date 
